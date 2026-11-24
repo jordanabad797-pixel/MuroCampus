@@ -23,12 +23,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tecsup.murocampus.data.PostRepositoryRemote
 import com.tecsup.murocampus.data.remote.RetrofitClient
 import com.tecsup.murocampus.ui.BarraMuroCampus
 import com.tecsup.murocampus.ui.PantallaCrear
 import com.tecsup.murocampus.ui.PantallaDetalle
+import com.tecsup.murocampus.ui.PantallaEditar
 import com.tecsup.murocampus.ui.PantallaLista
 import com.tecsup.murocampus.ui.theme.AzulMuro
 import com.tecsup.murocampus.ui.theme.Blanco
@@ -49,12 +51,14 @@ class MainActivity : ComponentActivity() {
                 )
                 var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
                 var creando by rememberSaveable { mutableStateOf(false) }
+                var editando by rememberSaveable { mutableStateOf(false) }
                 val estadoLista = rememberLazyListState()
                 val avisos = remember { SnackbarHostState() }
 
                 LaunchedEffect(Unit) {
                     vm.borrado.collect { resultado ->
                         if (resultado is UiState.Exito) {
+                            editando = false
                             idSeleccionado = null
                             vm.reiniciarBorrado()
                             avisos.showSnackbar("Publicación ${resultado.datos} eliminada")
@@ -63,8 +67,11 @@ class MainActivity : ComponentActivity() {
                 }
 
                 BackHandler(enabled = idSeleccionado != null || creando) {
-                    idSeleccionado = null
-                    creando = false
+                    when {
+                        editando -> editando = false
+                        creando -> creando = false
+                        else -> idSeleccionado = null
+                    }
                 }
 
                 Scaffold(
@@ -93,9 +100,23 @@ class MainActivity : ComponentActivity() {
                             vm = vm,
                             modifier = Modifier.padding(innerPadding)
                         )
+                        id != null && editando -> {
+                            val detalle = vm.detalle.collectAsStateWithLifecycle().value
+                            val tituloActual = if (detalle is UiState.Exito) detalle.datos.post.title else ""
+                            PantallaEditar(
+                                id = id,
+                                tituloActual = tituloActual,
+                                vm = vm,
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
                         id != null -> PantallaDetalle(
                             id = id,
                             vm = vm,
+                            onEditar = {
+                                vm.reiniciarEdicion()
+                                editando = true
+                            },
                             modifier = Modifier.padding(innerPadding)
                         )
                         else -> PantallaLista(

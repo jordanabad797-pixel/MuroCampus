@@ -47,6 +47,9 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
     private val _borrado = MutableStateFlow<UiState<Int>?>(null)
     val borrado: StateFlow<UiState<Int>?> = _borrado.asStateFlow()
 
+    private val _editado = MutableStateFlow<UiState<Post>?>(null)
+    val editado: StateFlow<UiState<Post>?> = _editado.asStateFlow()
+
     private var trabajoLista: Job? = null
     private var trabajoDetalle: Job? = null
 
@@ -106,6 +109,29 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
 
     fun reiniciarCreacion() {
         _creado.value = null
+    }
+
+    fun editarTitulo(id: Int, titulo: String) {
+        viewModelScope.launch {
+            _editado.value = UiState.Cargando
+            repo.editarTitulo(id, titulo.trim())
+                .onSuccess { actualizado ->
+                    val lista = _lista.value
+                    if (lista is UiState.Exito) {
+                        _lista.value = UiState.Exito(lista.datos.map { if (it.id == id) actualizado else it })
+                    }
+                    val detalle = _detalle.value
+                    if (detalle is UiState.Exito && detalle.datos.post.id == id) {
+                        _detalle.value = UiState.Exito(detalle.datos.copy(post = actualizado))
+                    }
+                    _editado.value = UiState.Exito(actualizado)
+                }
+                .onFailure { _editado.value = UiState.Error(mensajeDe(it)) }
+        }
+    }
+
+    fun reiniciarEdicion() {
+        _editado.value = null
     }
 
     fun borrar(id: Int) {

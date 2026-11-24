@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -25,10 +24,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,11 +32,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tecsup.murocampus.ui.theme.AzulMuro
 import com.tecsup.murocampus.ui.theme.Blanco
 import com.tecsup.murocampus.ui.theme.BordeCampo
-import com.tecsup.murocampus.ui.theme.BordeExito
 import com.tecsup.murocampus.ui.theme.FondoError
-import com.tecsup.murocampus.ui.theme.FondoExito
 import com.tecsup.murocampus.ui.theme.TextoError
-import com.tecsup.murocampus.ui.theme.TextoExito
 import com.tecsup.murocampus.ui.theme.TextoTitulo
 import com.tecsup.murocampus.viewmodel.PostsViewModel
 import com.tecsup.murocampus.viewmodel.UiState
@@ -135,31 +127,4 @@ fun PantallaCrear(vm: PostsViewModel, modifier: Modifier = Modifier) {
             )
         }
     }
-}
-
-@Composable
-private fun MensajeExito(texto: String) {
-    Text(
-        text = texto,
-        color = TextoExito,
-        fontSize = 15.sp,
-        fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .drawBehind {
-                val radio = CornerRadius(10.dp.toPx())
-                drawRoundRect(color = FondoExito, cornerRadius = radio)
-                drawRoundRect(
-                    color = BordeExito,
-                    cornerRadius = radio,
-                    style = Stroke(
-                        width = 1.5.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 5.dp.toPx()))
-                    )
-                )
-            }
-            .padding(top = 11.dp)
-    )
 }

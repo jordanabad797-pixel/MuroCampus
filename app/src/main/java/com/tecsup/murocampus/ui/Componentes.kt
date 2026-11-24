@@ -24,6 +24,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,15 +35,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecsup.murocampus.ui.theme.AzulMuro
 import com.tecsup.murocampus.ui.theme.Blanco
+import com.tecsup.murocampus.ui.theme.BordeExito
 import com.tecsup.murocampus.ui.theme.BordeSuave
 import com.tecsup.murocampus.ui.theme.ChipAmbar
 import com.tecsup.murocampus.ui.theme.ChipAzul
 import com.tecsup.murocampus.ui.theme.FondoError
+import com.tecsup.murocampus.ui.theme.FondoExito
 import com.tecsup.murocampus.ui.theme.FondoTarjeta
 import com.tecsup.murocampus.ui.theme.TextoCarga
 import com.tecsup.murocampus.ui.theme.TextoChipAmbar
 import com.tecsup.murocampus.ui.theme.TextoCuerpo
 import com.tecsup.murocampus.ui.theme.TextoError
+import com.tecsup.murocampus.ui.theme.TextoExito
 import com.tecsup.murocampus.ui.theme.TextoTitulo
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -177,4 +184,30 @@ fun ErrorConReintento(
             Text(text = "Reintentar", fontWeight = FontWeight.Bold, fontSize = 15.sp)
         }
     }
+}
+
+@Composable
+fun MensajeExito(texto: String, modifier: Modifier = Modifier) {
+    Text(
+        text = texto,
+        color = TextoExito,
+        fontSize = 15.sp,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .drawBehind {
+                val radio = CornerRadius(10.dp.toPx())
+                drawRoundRect(color = FondoExito, cornerRadius = radio)
+                drawRoundRect(
+                    color = BordeExito,
+                    cornerRadius = radio,
+                    style = Stroke(
+                        width = 1.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 5.dp.toPx()))
+                    )
+                )
+            }
+            .padding(horizontal = 16.dp, vertical = 11.dp)
+    )
 }

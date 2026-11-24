@@ -47,7 +47,12 @@ import com.tecsup.murocampus.viewmodel.PostsViewModel
 import com.tecsup.murocampus.viewmodel.UiState
 
 @Composable
-fun PantallaDetalle(id: Int, vm: PostsViewModel, modifier: Modifier = Modifier) {
+fun PantallaDetalle(
+    id: Int,
+    vm: PostsViewModel,
+    onEditar: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val estado by vm.detalle.collectAsStateWithLifecycle()
     val borrado by vm.borrado.collectAsStateWithLifecycle()
     var confirmar by rememberSaveable { mutableStateOf(false) }
@@ -66,8 +71,9 @@ fun PantallaDetalle(id: Int, vm: PostsViewModel, modifier: Modifier = Modifier) 
         ) {
             item { TarjetaDetalle(e.datos.post) }
             item {
-                AccionEliminar(
+                Acciones(
                     estado = borrado,
+                    onEditar = onEditar,
                     onEliminar = { confirmar = true }
                 )
             }
@@ -110,14 +116,14 @@ fun PantallaDetalle(id: Int, vm: PostsViewModel, modifier: Modifier = Modifier) 
 }
 
 @Composable
-private fun AccionEliminar(estado: UiState<Int>?, onEliminar: () -> Unit) {
+private fun Acciones(estado: UiState<Int>?, onEditar: () -> Unit, onEliminar: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (estado is UiState.Cargando) {
@@ -125,9 +131,19 @@ private fun AccionEliminar(estado: UiState<Int>?, onEliminar: () -> Unit) {
                     color = TextoError,
                     strokeWidth = 3.dp,
                     modifier = Modifier
-                        .padding(end = 12.dp)
+                        .padding(end = 2.dp)
                         .size(24.dp)
                 )
+            }
+            Button(
+                onClick = onEditar,
+                enabled = estado !is UiState.Cargando,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AzulMuro,
+                    contentColor = Blanco
+                )
+            ) {
+                Text(text = "Editar", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
             Button(
                 onClick = onEliminar,
