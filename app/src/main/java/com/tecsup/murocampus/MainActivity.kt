@@ -25,7 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.tecsup.murocampus.data.PostRepositoryCache
 import com.tecsup.murocampus.data.PostRepositoryRemote
+import com.tecsup.murocampus.data.local.MuroDatabase
 import com.tecsup.murocampus.data.remote.RetrofitClient
 import com.tecsup.murocampus.ui.BarraMuroCampus
 import com.tecsup.murocampus.ui.PantallaCrear
@@ -41,13 +43,21 @@ import com.tecsup.murocampus.viewmodel.PostsViewModelFactory
 import com.tecsup.murocampus.viewmodel.UiState
 
 class MainActivity : ComponentActivity() {
+
+    private val repositorio by lazy {
+        PostRepositoryCache(
+            remoto = PostRepositoryRemote(RetrofitClient.api),
+            dao = MuroDatabase.obtener(applicationContext).postDao()
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         setContent {
             MuroCampusTheme {
                 val vm: PostsViewModel = viewModel(
-                    factory = PostsViewModelFactory(PostRepositoryRemote(RetrofitClient.api))
+                    factory = PostsViewModelFactory(repositorio)
                 )
                 var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
                 var creando by rememberSaveable { mutableStateOf(false) }
