@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -14,7 +16,12 @@ import com.tecsup.murocampus.viewmodel.PostsViewModel
 import com.tecsup.murocampus.viewmodel.UiState
 
 @Composable
-fun PantallaLista(vm: PostsViewModel, modifier: Modifier = Modifier) {
+fun PantallaLista(
+    vm: PostsViewModel,
+    onAbrir: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    estadoLista: LazyListState = rememberLazyListState()
+) {
     val estado by vm.lista.collectAsStateWithLifecycle()
 
     when (val e = estado) {
@@ -26,6 +33,7 @@ fun PantallaLista(vm: PostsViewModel, modifier: Modifier = Modifier) {
         )
         is UiState.Exito -> LazyColumn(
             modifier = modifier.fillMaxSize(),
+            state = estadoLista,
             contentPadding = PaddingValues(14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -34,7 +42,7 @@ fun PantallaLista(vm: PostsViewModel, modifier: Modifier = Modifier) {
                     userId = post.userId,
                     titulo = post.title,
                     cuerpo = post.body.replace("\n", " "),
-                    onClick = {}
+                    onClick = { onAbrir(post.id) }
                 )
             }
         }
