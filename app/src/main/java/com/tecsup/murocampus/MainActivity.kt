@@ -12,9 +12,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -32,6 +36,7 @@ import com.tecsup.murocampus.ui.theme.FondoMuro
 import com.tecsup.murocampus.ui.theme.MuroCampusTheme
 import com.tecsup.murocampus.viewmodel.PostsViewModel
 import com.tecsup.murocampus.viewmodel.PostsViewModelFactory
+import com.tecsup.murocampus.viewmodel.UiState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +50,17 @@ class MainActivity : ComponentActivity() {
                 var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
                 var creando by rememberSaveable { mutableStateOf(false) }
                 val estadoLista = rememberLazyListState()
+                val avisos = remember { SnackbarHostState() }
+
+                LaunchedEffect(Unit) {
+                    vm.borrado.collect { resultado ->
+                        if (resultado is UiState.Exito) {
+                            idSeleccionado = null
+                            vm.reiniciarBorrado()
+                            avisos.showSnackbar("Publicación ${resultado.datos} eliminada")
+                        }
+                    }
+                }
 
                 BackHandler(enabled = idSeleccionado != null || creando) {
                     idSeleccionado = null
@@ -55,6 +71,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     containerColor = FondoMuro,
                     topBar = { BarraMuroCampus() },
+                    snackbarHost = { SnackbarHost(avisos) },
                     floatingActionButton = {
                         if (idSeleccionado == null && !creando) {
                             FloatingActionButton(
