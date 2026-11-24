@@ -1,17 +1,33 @@
 package com.tecsup.murocampus.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tecsup.murocampus.ui.theme.AzulMuro
+import com.tecsup.murocampus.ui.theme.Blanco
+import com.tecsup.murocampus.ui.theme.BordeSuave
+import com.tecsup.murocampus.ui.theme.TextoCarga
 import com.tecsup.murocampus.viewmodel.PostsViewModel
 import com.tecsup.murocampus.viewmodel.UiState
 
@@ -23,28 +39,91 @@ fun PantallaLista(
     estadoLista: LazyListState = rememberLazyListState()
 ) {
     val estado by vm.lista.collectAsStateWithLifecycle()
+    val usuarioFiltro by vm.usuarioFiltro.collectAsStateWithLifecycle()
 
-    when (val e = estado) {
-        is UiState.Cargando -> Cargando(modifier)
-        is UiState.Error -> ErrorConReintento(
-            mensaje = e.mensaje,
-            onReintentar = { vm.cargar() },
-            modifier = modifier
-        )
-        is UiState.Exito -> LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            state = estadoLista,
-            contentPadding = PaddingValues(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(e.datos, key = { it.id }) { post ->
-                TarjetaPost(
-                    userId = post.userId,
-                    titulo = post.title,
-                    cuerpo = post.body.replace("\n", " "),
-                    onClick = { onAbrir(post.id) }
-                )
+    Column(modifier = modifier.fillMaxSize()) {
+        FilaFiltros(
+            seleccionado = usuarioFiltro,
+            onElegir = { userId ->
+                if (userId != usuarioFiltro) {
+                    estadoLista.requestScrollToItem(0)
+                    vm.filtrar(userId)
+                }
             }
+        )
+
+        val contenido = Modifier
+            .fillMaxWidth()
+            .weight(1f)
+
+        when (val e = estado) {
+            is UiState.Cargando -> Cargando(contenido)
+            is UiState.Error -> ErrorConReintento(
+                mensaje = e.mensaje,
+                onReintentar = { vm.cargar() },
+                modifier = contenido
+            )
+            is UiState.Exito -> if (e.datos.isEmpty()) {
+                Box(modifier = contenido, contentAlignment = Alignment.Center) {
+                    Text(text = "Sin publicaciones", color = TextoCarga, fontSize = 15.sp)
+                }
+            } else {
+                LazyColumn(
+                    modifier = contenido,
+                    state = estadoLista,
+                    contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(e.datos, key = { it.id }) { post ->
+                        TarjetaPost(
+                            userId = post.userId,
+                            titulo = post.title,
+                            cuerpo = post.body.replace("\n", " "),
+                            onClick = { onAbrir(post.id) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilaFiltros(seleccionado: Int?, onElegir: (Int?) -> Unit) {
+    val opciones: List<Int?> = listOf(null) + (1..10).toList()
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(opciones) { userId ->
+            val activo = userId == seleccionado
+            FilterChip(
+                selected = activo,
+                onClick = { onElegir(userId) },
+                label = {
+                    Text(
+                        text = if (userId == null) "Todos" else "Usuario $userId",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                },
+                shape = RoundedCornerShape(10.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = Blanco,
+                    labelColor = AzulMuro,
+                    selectedContainerColor = AzulMuro,
+                    selectedLabelColor = Blanco
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = activo,
+                    borderColor = BordeSuave,
+                    selectedBorderColor = AzulMuro
+                )
+            )
         }
     }
 }
