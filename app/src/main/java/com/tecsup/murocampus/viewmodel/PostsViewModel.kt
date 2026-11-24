@@ -10,8 +10,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class DetalleUi(val post: Post, val comentarios: List<Comentario>)
@@ -20,6 +23,17 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
 
     private val _lista = MutableStateFlow<UiState<List<Post>>>(UiState.Cargando)
     val lista: StateFlow<UiState<List<Post>>> = _lista.asStateFlow()
+
+    private val _busqueda = MutableStateFlow("")
+    val busqueda: StateFlow<String> = _busqueda.asStateFlow()
+
+    val visibles: StateFlow<UiState<List<Post>>> = combine(_lista, _busqueda) { estado, texto ->
+        if (estado is UiState.Exito && texto.isNotBlank()) {
+            UiState.Exito(estado.datos.filter { it.title.contains(texto.trim(), ignoreCase = true) })
+        } else {
+            estado
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Cargando)
 
     private val _usuarioFiltro = MutableStateFlow<Int?>(null)
     val usuarioFiltro: StateFlow<Int?> = _usuarioFiltro.asStateFlow()
@@ -45,6 +59,10 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
                 .onSuccess { _lista.value = UiState.Exito(it) }
                 .onFailure { _lista.value = UiState.Error(mensajeDe(it)) }
         }
+    }
+
+    fun buscar(texto: String) {
+        _busqueda.value = texto
     }
 
     fun filtrar(userId: Int?) {

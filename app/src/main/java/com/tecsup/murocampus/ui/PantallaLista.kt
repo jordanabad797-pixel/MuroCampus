@@ -15,7 +15,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -26,8 +29,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tecsup.murocampus.ui.theme.AzulMuro
 import com.tecsup.murocampus.ui.theme.Blanco
+import com.tecsup.murocampus.ui.theme.BordeCampo
 import com.tecsup.murocampus.ui.theme.BordeSuave
 import com.tecsup.murocampus.ui.theme.TextoCarga
+import com.tecsup.murocampus.ui.theme.TextoTitulo
 import com.tecsup.murocampus.viewmodel.PostsViewModel
 import com.tecsup.murocampus.viewmodel.UiState
 
@@ -38,10 +43,18 @@ fun PantallaLista(
     modifier: Modifier = Modifier,
     estadoLista: LazyListState = rememberLazyListState()
 ) {
-    val estado by vm.lista.collectAsStateWithLifecycle()
+    val estado by vm.visibles.collectAsStateWithLifecycle()
     val usuarioFiltro by vm.usuarioFiltro.collectAsStateWithLifecycle()
+    val busqueda by vm.busqueda.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize()) {
+        CampoBusqueda(
+            texto = busqueda,
+            onCambiar = {
+                estadoLista.requestScrollToItem(0)
+                vm.buscar(it)
+            }
+        )
         FilaFiltros(
             seleccionado = usuarioFiltro,
             onElegir = { userId ->
@@ -65,7 +78,11 @@ fun PantallaLista(
             )
             is UiState.Exito -> if (e.datos.isEmpty()) {
                 Box(modifier = contenido, contentAlignment = Alignment.Center) {
-                    Text(text = "Sin publicaciones", color = TextoCarga, fontSize = 15.sp)
+                    Text(
+                        text = if (busqueda.isBlank()) "Sin publicaciones" else "Sin resultados para \"${busqueda.trim()}\"",
+                        color = TextoCarga,
+                        fontSize = 15.sp
+                    )
                 }
             } else {
                 LazyColumn(
@@ -86,6 +103,36 @@ fun PantallaLista(
             }
         }
     }
+}
+
+@Composable
+private fun CampoBusqueda(texto: String, onCambiar: (String) -> Unit) {
+    OutlinedTextField(
+        value = texto,
+        onValueChange = onCambiar,
+        placeholder = { Text("Buscar por título") },
+        singleLine = true,
+        trailingIcon = {
+            if (texto.isNotEmpty()) {
+                TextButton(onClick = { onCambiar("") }) {
+                    Text(text = "✕", color = AzulMuro, fontSize = 16.sp)
+                }
+            }
+        },
+        shape = RoundedCornerShape(10.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = AzulMuro,
+            unfocusedBorderColor = BordeCampo,
+            cursorColor = AzulMuro,
+            focusedTextColor = TextoTitulo,
+            unfocusedTextColor = TextoTitulo,
+            focusedContainerColor = Blanco,
+            unfocusedContainerColor = Blanco
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 14.dp, end = 14.dp, top = 12.dp)
+    )
 }
 
 @Composable
