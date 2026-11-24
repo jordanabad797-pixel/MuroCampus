@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 
 data class DetalleUi(val post: Post, val comentarios: List<Comentario>)
 
+private const val TAMANO_PAGINA = 20
+
 class PostsViewModel(private val repo: PostRepository) : ViewModel() {
 
     private val _lista = MutableStateFlow<UiState<List<Post>>>(UiState.Cargando)
@@ -37,6 +39,17 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
 
     private val _usuarioFiltro = MutableStateFlow<Int?>(null)
     val usuarioFiltro: StateFlow<Int?> = _usuarioFiltro.asStateFlow()
+
+    private val _hayMas = MutableStateFlow(false)
+    val hayMas: StateFlow<Boolean> = _hayMas.asStateFlow()
+
+    private val _cargandoMas = MutableStateFlow(false)
+    val cargandoMas: StateFlow<Boolean> = _cargandoMas.asStateFlow()
+
+    private val _errorMas = MutableStateFlow<String?>(null)
+    val errorMas: StateFlow<String?> = _errorMas.asStateFlow()
+
+    private var siguienteInicio = 0
 
     private val _detalle = MutableStateFlow<UiState<DetalleUi>>(UiState.Cargando)
     val detalle: StateFlow<UiState<DetalleUi>> = _detalle.asStateFlow()
@@ -59,11 +72,42 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
         trabajoLista?.cancel()
         trabajoLista = viewModelScope.launch {
             _lista.value = UiState.Cargando
+            _hayMas.value = false
+            _cargandoMas.value = false
+            _errorMas.value = null
             val userId = _usuarioFiltro.value
-            val resultado = if (userId == null) repo.listar() else repo.porUsuario(userId)
-            resultado
-                .onSuccess { _lista.value = UiState.Exito(it) }
-                .onFailure { _lista.value = UiState.Error(mensajeDe(it)) }
+            if (userId == null) {
+                repo.pagina(0, TAMANO_PAGINA)
+                    .onSuccess {
+                        _lista.value = UiState.Exito(it)
+                        siguienteInicio = it.size
+                        _hayMas.value = it.size == TAMANO_PAGINA
+                    }
+                    .onFailure { _lista.value = UiState.Error(mensajeDe(it)) }
+            } else {
+                repo.porUsuario(userId)
+                    .onSuccess { _lista.value = UiState.Exito(it) }
+                    .onFailure { _lista.value = UiState.Error(mensajeDe(it)) }
+            }
+        }
+    }
+
+    fun cargarMas() {
+        if (_lista.value !is UiState.Exito || !_hayMas.value || _cargandoMas.value) return
+        trabajoLista = viewModelScope.launch {
+            _cargandoMas.value = true
+            _errorMas.value = null
+            repo.pagina(siguienteInicio, TAMANO_PAGINA)
+                .onSuccess { nuevos ->
+                    val actual = _lista.value
+                    if (actual is UiState.Exito) {
+                        _lista.value = UiState.Exito((actual.datos + nuevos).distinctBy { it.id })
+                    }
+                    siguienteInicio += nuevos.size
+                    _hayMas.value = nuevos.size == TAMANO_PAGINA
+                }
+                .onFailure { _errorMas.value = mensajeDe(it) }
+            _cargandoMas.value = false
         }
     }
 
