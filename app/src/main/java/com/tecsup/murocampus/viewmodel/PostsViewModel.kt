@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tecsup.murocampus.data.PostRepository
 import com.tecsup.murocampus.model.Comentario
+import com.tecsup.murocampus.model.NuevoPost
 import com.tecsup.murocampus.model.Post
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -25,6 +26,9 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
 
     private val _detalle = MutableStateFlow<UiState<DetalleUi>>(UiState.Cargando)
     val detalle: StateFlow<UiState<DetalleUi>> = _detalle.asStateFlow()
+
+    private val _creado = MutableStateFlow<UiState<Post>?>(null)
+    val creado: StateFlow<UiState<Post>?> = _creado.asStateFlow()
 
     private var trabajoLista: Job? = null
     private var trabajoDetalle: Job? = null
@@ -67,5 +71,18 @@ class PostsViewModel(private val repo: PostRepository) : ViewModel() {
             }
             _detalle.value = UiState.Exito(DetalleUi(post, comentarios))
         }
+    }
+
+    fun publicar(titulo: String, texto: String) {
+        viewModelScope.launch {
+            _creado.value = UiState.Cargando
+            repo.crear(NuevoPost(userId = 1, title = titulo.trim(), body = texto.trim()))
+                .onSuccess { _creado.value = UiState.Exito(it) }
+                .onFailure { _creado.value = UiState.Error(mensajeDe(it)) }
+        }
+    }
+
+    fun reiniciarCreacion() {
+        _creado.value = null
     }
 }
